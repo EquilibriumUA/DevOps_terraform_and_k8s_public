@@ -1,0 +1,58 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: pulsemetrics
+  namespace: analytics
+  labels:
+    release: monitoring
+spec:
+  groups:
+    - name: pulsemetrics
+      rules:
+        - alert: PulseMetricsTargetDown
+          expr: |
+            sum(up{namespace="analytics"}) < 2
+          for: 1m
+          labels:
+            severity: critical
+            app: pulsemetrics
+            namespace: analytics
+          annotations:
+            summary: "PulseMetrics Prometheus target is down"
+            description: "Fewer than 2 PulseMetrics instances are currently being scraped by Prometheus."
+
+        - alert: PulseMetricsReplicasUnavailable
+          expr: |
+            kube_deployment_status_replicas_available{
+              namespace="analytics",
+              deployment="analytics-dashboard"
+            }
+            <
+            kube_deployment_spec_replicas{
+              namespace="analytics",
+              deployment="analytics-dashboard"
+            }
+          for: 1m
+          labels:
+            severity: warning
+            app: pulsemetrics
+            namespace: analytics
+          annotations:
+            summary: "PulseMetrics replicas unavailable"
+            description: "The PulseMetrics deployment has fewer available replicas than desired."
+
+        - alert: PulseMetricsPodRestartDetected
+          expr: |
+            increase(
+              kube_pod_container_status_restarts_total{
+                namespace="analytics",
+                pod=~"analytics-dashboard-.*"
+              }[5m]
+            ) > 0
+          labels:
+            severity: info
+            app: pulsemetrics
+            namespace: analytics
+          annotations:
+            summary: "PulseMetrics pod restart detected"
+            description: "A PulseMetrics pod has restarted within the last 5 minutes."

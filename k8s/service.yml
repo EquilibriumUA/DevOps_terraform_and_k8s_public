@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: analytics-dashboard
+  namespace: analytics
+  labels:
+    app: analytics-dashboard
+spec:
+  type: LoadBalancer
+
+  selector:
+    app: analytics-dashboard
+
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      protocol: TCP
+
+    - name: metrics
+      port: 3000
+      targetPort: http
+      protocol: TCP
